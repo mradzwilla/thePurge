@@ -11,6 +11,7 @@ function preload(){
 	game.state.add('menu', gameMenu)
 	console.log("preload")
 
+	dialogueFlag = 0
 }
 
 function create(){
@@ -47,44 +48,9 @@ var levelOne = {
 		var pressY = game.input.keyboard.addKey(Phaser.Keyboard.Y);
 		var pressSpace = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR)
 
-		function dialogue(text) {
+		function movementControls(){
 
-			var speech = text
 			levelOne.state.update = function(){
-				console.log(speech[0])
-			}
-
-		}
-
-		person = game.add.group();
-		person.enableBody = true
-
-		var belle = person.create(game.world.width/2, game.world.height/2, 'belle');
-		belle.body.immovable = true
-		belle.body.physicsBodyType = Phaser.Physics.ARCADE;
-		belle.body.setSize(24,36)
-
-		var player = game.add.sprite(32, game.world.height - 150, 'aladdin');
-		player.enableBody = true
-
-		player.animations.add('down', [0, 1, 2, 3], 4, true);
-		player.animations.add('left', [4, 5, 6, 7], 4, true);
-		player.animations.add('right', [8, 9, 10, 11], 4, true);
-		player.animations.add('up', [12, 13, 14, 15], 4, true);
-
-		player.animations.stop
-		game.physics.enable(player,Phaser.Physics.ARCADE);
-		game.physics.arcade.enable(person)
-		player.body.collideWorldBounds = true
-
-
-		player.frame = 0
-
-		pressY.onDown.add(function(){
-			game.state.start('menu')
-		})
-
-		this.state.update = function(){
 
 			player.body.velocity.x = 0
 			player.body.velocity.y = 0
@@ -108,33 +74,78 @@ var levelOne = {
 			player.animations.stop();
 			}
 
-			pressSpace.onDown.add(function(){
-				if (game.physics.arcade.distanceBetween(player,belle) <= 45){
-					game.add.sprite(0, 500, 'textBox')
-					game.add.text(50, 532, "Get away!",{fill: "#444444"});
-					dialogue(["Oh hello...street rat.","It's purging time!"]);
-				}
-
-			})
-			// if (game.physics.arcade.distanceBetween(player,belle) <= 45 && pressSpace.onDown){
-			// 	game.add.text(game.world.centerX, game.world.centerY, "Get away!",{fill: "#ffffff"})
-
-			if (cursors.left.isDown){
-			player.animations.play('left')
-			player.body.velocity.x = -150
-			
-			}
-				pressSpace.onDown.add(function(){
-					cursors = true
-				})
-				console.log('ok')
 			}
 		}
 
+		function dialogue(text) {
+			
+			//Stop velocity to prevent player movement during dialogue
+			player.body.velocity.x = 0
+			player.body.velocity.y = 0
+
+			dialogueFlag = 1			
+			var speech = text
+			var i = -1 	//The downDuration functionwill immediately fire setting i to 0
+			textBox = game.add.sprite(0, 500, 'textBox')
+
+			console.log("initialize dialogue")
+			textDisplay = game.add.text(50, 532, speech[0],{fill: "#444444"});
+
+			levelOne.state.update = function(){
+				if (game.input.keyboard.downDuration(32,1)){
+					i++;
+					textDisplay.destroy();
+					textDisplay = game.add.text(50, 532, speech[i],{fill: "#444444"});
+				}
+
+				//-1 ommitted from speech.length lets pressing space close the box
+				if (i == (speech.length)){
+					textDisplay.destroy();
+					textBox.destroy()
+					dialogueFlag = 0;
+					movementControls();
+					return
+				}
+			}
+		}
+
+		person = game.add.group();
+		person.enableBody = true
+
+		var belle = person.create(game.world.width/2, game.world.height/2, 'belle');
+		belle.body.immovable = true
+		belle.body.physicsBodyType = Phaser.Physics.ARCADE;
+		belle.body.setSize(24,36)
+
+		var player = game.add.sprite(32, game.world.height - 150, 'aladdin');
+		player.enableBody = true
+
+		player.animations.add('down', [0, 1, 2, 3], 4, true);
+		player.animations.add('left', [4, 5, 6, 7], 4, true);
+		player.animations.add('right', [8, 9, 10, 11], 4, true);
+		player.animations.add('up', [12, 13, 14, 15], 4, true);
+
+		player.animations.stop
+		game.physics.enable(player,Phaser.Physics.ARCADE);
+		game.physics.arcade.enable(person)
+		player.body.collideWorldBounds = true
+
+		player.frame = 0
+
+		pressY.onDown.add(function(){
+			game.state.start('menu')
+		})
+
+		this.state.update = function(){
+
+			movementControls();
+
+			pressSpace.onDown.add(function(){
+				if (game.physics.arcade.distanceBetween(player,belle) <= 45 && dialogueFlag==0){
+					dialogue(["Oh hello...street rat.","Why The Purge is a tale as old as time!","It's purging time!"]);
+					}
+				})
+			}
+		}
 
  	}
-
- 	// this.update = function(){}
-
-
-// }
